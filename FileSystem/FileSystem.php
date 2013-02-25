@@ -25,7 +25,7 @@ class FileSystem
 		}
 	}
 	
-    public static function __callStatic($name, $args) {
+	public static function __callStatic($name, $args) {
 		$method = "_{$name}";
 
 		if (method_exists(get_called_class(), $method)) {
@@ -36,7 +36,7 @@ class FileSystem
 			
 			return call_user_func_array(array($self, $method), $args);
 		}
-    }
+	}
 
 	protected function _pwd() {
 		return $this->_path;
