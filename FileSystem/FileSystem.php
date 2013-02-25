@@ -31,7 +31,7 @@ class FileSystem
 
 			$class = get_called_class();
 			$self = new $class($path, false);
-			
+
 			return call_user_func_array(array($self, $method), $args);
 		}
 	}
@@ -41,7 +41,7 @@ class FileSystem
 	}
 
 	protected function _cd($path) {
-		$this->_path = $path;
+		$this->_path = realpath($path);
 	}
 	
 	protected function _exists() {
@@ -59,7 +59,8 @@ class FileSystem
 					}
 
 					if (is_dir($path)) {
-						FileSystem::chmod($path, $mode);
+						$fileSystem = new FileSystem($path, false);
+						$fileSystem->chmod($mode);
 					}
 				}
 				closedir($handle);
@@ -83,7 +84,8 @@ class FileSystem
 					}
 
 					if (is_dir($path)) {
-						FileSystem::chown($path, $user);
+						$fileSystem = new FileSystem($path, false);
+						$fileSystem->chown($user, $recursive);
 					}
 				}
 				closedir($handle);
@@ -107,7 +109,8 @@ class FileSystem
 					}
 
 					if (is_dir($path)) {
-						FileSystem::chgrp($path, $user);
+						$fileSystem = new FileSystem($path, false);
+						$fileSystem->chgrp($user, $recursive);
 					}
 				}
 				closedir($handle);
@@ -132,7 +135,7 @@ class FileSystem
 			if ($handle = @opendir($this->_path)) {
 				while (false !== ($item = readdir($handle))) {
 					$from = rtrim($this->_path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $item;
-					$to = rtrim($toDir->path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $item;
+					$to = rtrim($toDir->pwd(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $item;
 
 					if (!$toDir->isWritable()) {
 						throw new FileSystemException("Não foi possível copiar a origem '{$from}' para o destino '{$to}', pois o destino não tem permissão de escrita.");
@@ -156,7 +159,8 @@ class FileSystem
 							chmod($to, intval($mode, 8));
 							umask($old);
 
-							FileSystem::copy($from, $to, $mode);
+							$fileSystem = new FileSystem($from, false);
+							$fileSystem->copy($to, $mode);
 						} else {
 							throw new FileSystemException("Não foi possível copiar a pasta '{$from}' para o destino '{$to}'.");
 						}
@@ -229,6 +233,40 @@ class FileSystem
 			unlink($this->_path);
 		}
 		return $this;
+	}
+
+	protected function _size() {
+		if (!$this->_exists()) {
+			throw new FileSystemException("Não foi possível calcular o tamanho do caminho. O caminho '{$this->_path}' parece não existir.");
+		}
+
+		if ($this->_isDir()) {
+			$size = 0;
+
+			if ($handle = @opendir($this->_path)) {
+				while (false !== ($item = readdir($handle))) {
+					if ($item === '.' || $item === '..') {
+						continue;
+					}
+
+					$path = rtrim($this->_path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $item;
+
+					if (is_file($path)) {
+						$size += filesize($path);
+					}
+
+					if (is_dir($path)) {
+						$fileSystem = new FileSystem($path, false);
+						$size += $fileSystem->size();
+					}
+				}
+				closedir($handle);
+			}
+		} else {
+			$size = filesize($this->_path);
+		}
+
+		return $size;
 	}
 	
 	protected function _isDir() {
