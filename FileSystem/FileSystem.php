@@ -7,8 +7,6 @@ class FileSystem
 {
 	protected $_path;
 	
-	protected static $_instance = array();
-
 	public function __construct($path, $create = true, $mode = 0755) {
 		$this->_cd($path);
 		
