@@ -5,7 +5,7 @@ use \FileSystem\Exception\FileSystemException;
 
 class FileSystem
 {
-	public $_path;
+	protected $_path;
 	
 	protected static $_instance = array();
 
