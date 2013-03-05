@@ -42,6 +42,8 @@ class FileSystem
 
 	protected function _cd($path) {
 		$this->_path = realpath($path);
+		
+		return $this;
 	}
 	
 	protected function _exists() {
